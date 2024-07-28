@@ -1,5 +1,11 @@
 package com.natwest.natwest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @RestController
+@Tag(name = "NatWest Assignment", description = "API Documentation")
 public class StudentController {
 
     private static final Logger logger = Logger.getLogger(StudentController.class.getName());
@@ -25,20 +32,27 @@ public class StudentController {
     @Autowired
     private StudentRepository studentRepository;
 
-    @PostMapping("/upload")
-    public ResponseEntity<InputStreamResource> uploadCsv(@RequestPart("file") MultipartFile file) {
-        ByteArrayInputStream in = csvProcessingService.processCsv(file);
-        if (in == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+    @Operation(summary = "Upload CSV Using Postman", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))))
+    @ApiResponse(responseCode = "200", description = "Uploaded Csv Successfully")
 
-        InputStreamResource resource = new InputStreamResource(in);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=processed_students.csv")
-                .contentType(MediaType.parseMediaType("application/csv"))
-                .body(resource);
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<InputStreamResource> uploadCsv(@RequestPart MultipartFile file) {
+        try {
+            ByteArrayInputStream in = csvProcessingService.processCsv(file);
+            if (in == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
+            InputStreamResource resource = new InputStreamResource(in);
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=processed_students.csv").contentType(MediaType.parseMediaType("application/csv")).body(resource);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error processing CSV file: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
+    @Operation(summary = "Get Eligibility Form From Roll Number")
+    @ApiResponse(responseCode = "200", description = "Eligibility fetched successfully")
     @GetMapping("/{rollNumber}")
     public ResponseEntity<String> getEligibility(@PathVariable String rollNumber) {
         try {
