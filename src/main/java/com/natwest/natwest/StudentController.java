@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -14,17 +14,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+@Slf4j
 @RestController
 @Tag(name = "NatWest Assignment", description = "API Documentation")
 public class StudentController {
-
-    private static final Logger logger = Logger.getLogger(StudentController.class.getName());
 
     @Autowired
     private CsvProcessingService csvProcessingService;
@@ -46,7 +45,7 @@ public class StudentController {
             InputStreamResource resource = new InputStreamResource(in);
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=processed_students.csv").contentType(MediaType.parseMediaType("application/csv")).body(resource);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error processing CSV file: ", e);
+            log.debug("Error processing CSV file: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -56,17 +55,17 @@ public class StudentController {
     @GetMapping("/{rollNumber}")
     public ResponseEntity<String> getEligibility(@PathVariable String rollNumber) {
         try {
-            logger.log(Level.INFO, "Fetching eligibility for roll number: {0}", rollNumber);
+            log.debug("Fetching eligibility for roll number: {}", rollNumber);
             Optional<StudentModel> student = studentRepository.findByRollNumber(rollNumber);
             return student.map(value -> {
-                logger.log(Level.INFO, "Eligibility found: {0}", value.getEligibility());
+                log.debug("Eligibility found: {}", value.getEligibility());
                 return ResponseEntity.ok(value.getEligibility());
             }).orElseGet(() -> {
-                logger.log(Level.INFO, "No eligibility found for roll number: {0}", rollNumber);
+                log.debug("No eligibility found for roll number: {}", rollNumber);
                 return ResponseEntity.ok("NA");
             });
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error fetching eligibility for roll number: " + rollNumber, e);
+            log.error("Error fetching eligibility for roll number: " + rollNumber, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
         }
     }

@@ -1,12 +1,11 @@
 package com.natwest.natwest;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class CsvProcessingService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CsvProcessingService.class);
 
     @Autowired
     private StudentRepository studentRepository;
@@ -60,7 +59,7 @@ public class CsvProcessingService {
             csvPrinter.flush();
             return new ByteArrayInputStream(out.toByteArray());
         } catch (IOException e) {
-            logger.error("Error processing CSV file", e);
+            log.error("Error processing CSV file", e);
             return null;
         }
     }
